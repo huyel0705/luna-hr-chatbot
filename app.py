@@ -17,7 +17,7 @@ st.set_page_config(page_title="LUNA - Trợ Lý Nhân Sự", page_icon="✨", la
 class HRConfig:
     API_KEY = st.secrets["GOOGLE_API_KEY"] 
     DATA_DIR = "./data"
-    MODEL_NAME = "gemini-2.0-flash" 
+    MODEL_NAME = "gemini-2.5-flash" 
     EMBEDDING_MODEL = "keepitreal/vietnamese-sbert"
 
 # Tùy chỉnh giao diện chuyên nghiệp hơn
