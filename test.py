@@ -15,7 +15,7 @@ from langchain_core.output_parsers import StrOutputParser
 st.set_page_config(page_title="LUNA - HR Portal", page_icon="✨", layout="wide")
 
 class HRConfig:
-    API_KEY = "AIzaSyCViLUiTIJNQyCmiP8esYOYS6qjbuxwAY4" 
+    API_KEY = st.secrets["GOOGLE_API_KEY"] 
     DATA_DIR = "./data"
     MODEL_NAME = "gemini-2.5-flash" 
     EMBEDDING_MODEL = "keepitreal/vietnamese-sbert"
