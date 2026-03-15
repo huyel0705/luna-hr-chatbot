@@ -6,26 +6,27 @@ from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 
 # ==========================================
-# 1. CẤU HÌNH HỆ THỐNG
+# 1. CẤU HÌNH HỆ THỐNG (USER VERSION)
 # ==========================================
-st.set_page_config(page_title="LUNA - HR Portal", page_icon="✨", layout="wide")
+st.set_page_config(page_title="LUNA - Trợ Lý Nhân Sự", page_icon="✨", layout="centered")
 
 class HRConfig:
-    API_KEY = "AIzaSyCViLUiTIJNQyCmiP8esYOYS6qjbuxwAY4" 
+    API_KEY = st.secrets["GOOGLE_API_KEY"] 
     DATA_DIR = "./data"
-    MODEL_NAME = "gemini-2.5-flash" 
+    MODEL_NAME = "gemini-2.0-flash" 
     EMBEDDING_MODEL = "keepitreal/vietnamese-sbert"
 
-# Giao diện CSS
+# Tùy chỉnh giao diện chuyên nghiệp hơn
 st.markdown("""
 <style>
-    .main-header { font-size: 2.2rem; font-weight: 800; color: #1E293B; }
-    .stApp { background-color: #F8FAFC; }
-    [data-testid="stChatMessage"] { border-radius: 12px; border: 1px solid #E2E8F0; margin-bottom: 10px; }
+    .stApp { background-color: #FFFFFF; }
+    .main-header { font-size: 2.5rem; font-weight: 800; color: #1E40AF; text-align: center; margin-bottom: 20px; }
+    .sub-header { font-size: 1.1rem; color: #64748B; text-align: center; margin-bottom: 40px; }
+    [data-testid="stSidebar"] { background-color: #F8FAFC; border-right: 1px solid #E2E8F0; }
+    .stChatMessage { border-radius: 15px; padding: 15px; margin-bottom: 15px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -36,10 +37,6 @@ class HRChatbot:
     def __init__(self):
         os.environ["GOOGLE_API_KEY"] = HRConfig.API_KEY
         self.embeddings = HuggingFaceEmbeddings(model_name=HRConfig.EMBEDDING_MODEL)
-        
-        if not os.path.exists(HRConfig.DATA_DIR):
-            os.makedirs(HRConfig.DATA_DIR)
-            
         self.vectorstore = self._init_vector_db()
         if self.vectorstore:
             self.retriever = self.vectorstore.as_retriever(search_kwargs={"k": 20})
@@ -48,39 +45,32 @@ class HRChatbot:
             self.rag_chain = None
 
     def _init_vector_db(self):
+        if not os.path.exists(HRConfig.DATA_DIR): return None
         all_files = [os.path.join(HRConfig.DATA_DIR, f) for f in os.listdir(HRConfig.DATA_DIR) 
                      if f.endswith(".docx") and not f.startswith("~$")]
         if not all_files: return None
 
         documents = []
         for file_path in all_files:
-            try:
-                loader = Docx2txtLoader(file_path)
-                documents.extend(loader.load())
-            except Exception as e:
-                st.error(f"Lỗi đọc file {file_path}: {e}")
+            loader = Docx2txtLoader(file_path)
+            documents.extend(loader.load())
 
-        # Chunk size lớn để bao quát Điều 3.6 và Điều 7.8
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=2000, 
-            chunk_overlap=500,
-            separators=["\nĐiều ", "\nChương ", "\n\n", "\n", " "]
-        )
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1500, chunk_overlap=300)
         chunks = text_splitter.split_documents(documents)
         return FAISS.from_documents(chunks, self.embeddings)
 
     def _build_chain(self):
-        llm = ChatGoogleGenerativeAI(model=HRConfig.MODEL_NAME, temperature=0.0)
+        llm = ChatGoogleGenerativeAI(model=HRConfig.MODEL_NAME, temperature=0.3)
         
-        # System Prompt được thiết kế để nhận 3 biến: context, history, input
+        # PROMPT HOÀN TOÀN MỚI: BỎ ĐIỀU LUẬT, TRẢ LỜI MẠCH LẠC
         system_prompt = (
-            "Bạn là LUNA - Trợ lý Pháp lý cao cấp. Giải đáp dựa trên DỮ LIỆU PHÁP LÝ TÌM ĐƯỢC.\n\n"
-            "🔴 QUY TẮC CỐ ĐỊNH:\n"
-            "1. Phải trích dẫn (QĐ) sau mỗi ý. Ví dụ: (Điều 7.8 (QĐ)).\n"
-            "2. 'Lao động kỹ thuật' quy định tại Điều 3.6 (QĐ).\n"
-            "3. 'Chuyên gia' quy định tại Điều 3.3 (QĐ).\n\n"
-            "LỊCH SỬ HỘI THOẠI:\n{history}\n\n"
-            "DỮ LIỆU PHÁP LÝ TRA CỨU:\n{context}"
+            "Bạn là LUNA - Chuyên gia tư vấn nhân sự thông minh. Hãy trả lời câu hỏi của nhân viên một cách hỗ trợ, chuyên nghiệp và dễ hiểu.\n\n"
+            "🔴 QUY TẮC NGHIÊM NGẶT:\n"
+            "1. TUYỆT ĐỐI KHÔNG nhắc đến số hiệu Điều, Khoản, hay các ký hiệu (Luật), (QĐ).\n"
+            "2. Giải thích các quy định bằng ngôn ngữ đời thường, mạch lạc. Không trích dẫn nguyên văn văn bản pháp luật khô khan.\n"
+            "3. Sử dụng gạch đầu dòng để trình bày các ý rõ ràng. Bôi đậm các con số quan trọng (Ví dụ: **200%**, **45 ngày**).\n"
+            "4. Nếu thông tin không có trong dữ liệu, hãy lịch sự đề nghị nhân viên liên hệ phòng Nhân sự để được hỗ trợ chi tiết.\n\n"
+            "DỮ LIỆU THAM KHẢO:\n{context}"
         )
         
         prompt = ChatPromptTemplate.from_messages([
@@ -88,82 +78,52 @@ class HRChatbot:
             ("human", "{input}")
         ])
 
-        # SỬA LỖI DICT BẰNG CÁCH ĐỊNH NGHĨA RÕ CẤU TRÚC ĐẦU VÀO
-        return (
-            {
-                "context": lambda x: x["context"],
-                "history": lambda x: x["history"],
-                "input": lambda x: x["input"]
-            }
-            | prompt 
-            | llm 
-            | StrOutputParser()
-        )
-
-    def chat(self, user_query: str):
-        if not self.rag_chain:
-            return "Vui lòng thêm file .docx vào thư mục /data."
-        
-        try:
-            # 1. Tạo chuỗi lịch sử chat
-            chat_history_text = ""
-            if "messages" in st.session_state:
-                for msg in st.session_state.messages[-5:]: 
-                    role = "Người dùng" if msg["role"] == "user" else "LUNA"
-                    chat_history_text += f"{role}: {msg['content']}\n"
-
-            # 2. Truy xuất context từ Vector DB
-            docs = self.retriever.invoke(user_query)
-            context_text = "\n\n".join(d.page_content for d in docs)
-
-            # 3. Gọi invoke với dictionary đầy đủ các key
-            return self.rag_chain.invoke({
-                "context": context_text,
-                "input": user_query, 
-                "history": chat_history_text
-            })
-        except Exception as e:
-            return f"⚠️ Lỗi xử lý hệ thống: {str(e)}"
+        return ({"context": self.retriever, "input": RunnablePassthrough()} 
+                | prompt | llm | StrOutputParser())
 
 # ==========================================
-# 3. GIAO DIỆN STREAMLIT
+# 3. GIAO DIỆN NGƯỜI DÙNG (USER INTERFACE)
 # ==========================================
-# Khởi tạo bot (sử dụng cache_resource để không load lại mỗi khi chat)
 @st.cache_resource
 def load_bot():
     return HRChatbot()
 
+# Sidebar ẩn dành cho Admin
+with st.sidebar:
+    st.image("https://cdn-icons-png.flaticon.com/512/4712/4712139.png", width=100)
+    st.title("Admin Panel")
+    pwd = st.text_input("Mật khẩu quản trị", type="password")
+    if pwd == "123": # Thay bằng mật khẩu của bạn
+        if st.button("🔄 Cập nhật dữ liệu mới"):
+            st.cache_resource.clear()
+            st.rerun()
+    st.info("Phiên bản người dùng V3.0. Dữ liệu được cập nhật từ Bộ luật Lao động mới nhất.")
+
+# Header chính
+st.markdown("<div class='main-header'>✨ Trợ Lý Nhân Sự LUNA</div>", unsafe_allow_html=True)
+st.markdown("<div class='sub-header'>Chào bạn! Tôi ở đây để hỗ trợ bạn giải đáp các thắc mắc về chính sách, lương thưởng và quyền lợi tại công ty.</div>", unsafe_allow_html=True)
+
+# Khởi tạo bot
 bot = load_bot()
 
-# VỊ TRÍ CHÈN CODE MỚI: Đặt ở Sidebar
-with st.sidebar:
-    st.markdown("### ⚙️ QUẢN LÝ HỆ THỐNG")
-    
-    # Nút làm mới dữ liệu
-    if st.button("🔄 Làm mới dữ liệu", use_container_width=True):
-        st.cache_resource.clear()  # Xóa toàn bộ dữ liệu bot đang lưu trong RAM
-        st.success("Đang quét lại thư mục /data...")
-        st.rerun()  # Chạy lại toàn bộ app để nạp file mới vào FAISS
-    
-    st.markdown("---")
-    st.info("Thêm file .docx mới vào thư mục 'data' rồi bấm nút trên để cập nhật.")
-
-st.markdown("<h1 class='main-header'>✨ LUNA - HR LEGAL ASSISTANT (Gemini 2.5)</h1>", unsafe_allow_html=True)
-
+# Chat interface
 if "messages" not in st.session_state:
-    st.session_state.messages = [{"role": "assistant", "content": "Chào bạn! Mình là LUNA. Bạn cần mình tra cứu quy định nào trong Nghị định hôm nay?"}]
+    st.session_state.messages = []
 
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-if prompt := st.chat_input("Nhập câu hỏi..."):
+if prompt := st.chat_input("Hỏi LUNA về quy định nghỉ phép, tiền lương..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        with st.spinner("LUNA đang đối soát dữ liệu pháp lý..."):
-            answer = bot.chat(prompt)
-            st.markdown(answer)
-            st.session_state.messages.append({"role": "assistant", "content": answer})
+        if bot.rag_chain:
+            with st.spinner("Đang tra cứu thông tin cho bạn..."):
+                response = bot.rag_chain.invoke(prompt)
+                st.markdown(response)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+        else:
+            st.error("Hệ thống chưa nạp dữ liệu. Vui lòng liên hệ Admin.")
