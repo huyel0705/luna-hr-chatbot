@@ -18,9 +18,9 @@ st.set_page_config(page_title="LUNA - Cổng Thông Tin Nhân Sự", page_icon="
 class HRConfig:
     API_KEY = st.secrets["GOOGLE_API_KEY"]
     DATA_DIR = "./data"
-    MODEL_NAME = "gemini-1.5-flash"
+    MODEL_NAME = "gemini-2.5-flash"
     EMBEDDING_MODEL = "keepitreal/vietnamese-sbert"
-    COMPANY_DOMAIN = "@congty.com" # Tên miền email bắt buộc để đăng ký
+    COMPANY_DOMAIN = "@rikai.technology" # Tên miền email bắt buộc để đăng ký
     USERS_DB = "users_db.json"     # File lưu tài khoản
     HISTORY_DIR = "./chat_history" # Thư mục lưu lịch sử chat
 
