@@ -79,6 +79,9 @@ class HRChatbotLCEL:
             "1. SỰ CHÍNH XÁC TRUYỆT ĐỐI: Bám sát văn bản, không tự ý sáng tạo hay tóm tắt quá mức làm mất đi ý nghĩa pháp lý của nội quy.\n"
             "2. BAO QUÁT THÔNG TIN: Nếu người dùng hỏi chung chung về 'các hành vi', hãy quét toàn bộ ngữ cảnh và liệt kê đầy đủ các nhóm vi phạm tìm thấy, không được bỏ sót.\n"
             "3. DẪN CHỨNG RÕ RÀNG: Luôn ghi chú (Điều X) hoặc (Chương Y) tương ứng với từng quy định.\n\n"
+            "🔴 QUY TẮC NGHIÊM NGẶT:\n"
+            "1. Chỉ trả lời dựa trên con số có trong văn bản. Nếu không thấy, hãy báo là chưa tìm thấy, tuyệt đối không tự đưa ra con số (như 15 ngày).\n"
+            "2. Với trường hợp làm việc 3 năm (thường là Hợp đồng xác định thời hạn từ 12-36 tháng hoặc không xác định thời hạn), hãy kiểm tra kỹ thời hạn báo trước là 30 hoặc 45 ngày."
             "DỮ LIỆU NỘI QUY:\n{context}"
         )
 
