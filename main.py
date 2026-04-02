@@ -33,7 +33,7 @@ class HRConfig:
     DATA_DIR = "./data"
     MODEL_NAME = "gemini-2.5-flash"
     EMBEDDING_MODEL = "keepitreal/vietnamese-sbert"
-    COMPANY_DOMAIN = "@rikai.technology" # Tên miền bắt buộc
+    COMPANY_DOMAIN = "@gmail.com" # Tên miền bắt buộc
     USERS_DB = "users_db.json"     
     HISTORY_DIR = "./chat_history" 
 
