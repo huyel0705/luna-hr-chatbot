@@ -38,11 +38,9 @@ class HRConfig:
     HISTORY_DIR = "./chat_history" 
 
 # Tạo thư mục nếu chưa có
-if not os.path.exists(HRConfig.HISTORY_DIR):
-    os.makedirs(HRConfig.HISTORY_DIR)
-if not os.path.exists(HRConfig.DATA_DIR):
-    os.makedirs(HRConfig.DATA_DIR)
-
+# Tạo thư mục an toàn (Bỏ qua nếu đã tồn tại)
+os.makedirs(HRConfig.HISTORY_DIR, exist_ok=True)
+os.makedirs(HRConfig.DATA_DIR, exist_ok=True)
 # Giao diện CSS
 st.markdown("""
 <style>
